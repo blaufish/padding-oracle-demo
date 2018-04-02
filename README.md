@@ -4,8 +4,7 @@ I wrote this demo back in 2011:
 * https://www.youtube.com/watch?v=B7UzYaTSeq8
 * https://www.slideshare.net/blaufish/padding-oracle-opkoko2011
 
-Sadly, the source code could not be found anywhere today.
-
+Sadly, the source code from 2011 could not be found anywhere today. 
 So I rewrote it, largely based on OCR:s from the youtube screenshots.
 
 The code was largely inspired by articles by:
