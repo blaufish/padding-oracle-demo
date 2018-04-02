@@ -3,6 +3,7 @@ package paddingoracle;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Random;
 
 import javax.crypto.BadPaddingException;
@@ -18,7 +19,11 @@ class Test {
 
 	@org.junit.jupiter.api.BeforeEach
 	void setup() throws Exception {
-		sr = SecureRandom.getInstanceStrong();
+		init(SecureRandom.getInstanceStrong());
+	}
+
+	private void init(Random random) throws Exception {
+		sr = random;
 		e = new Encryptor();
 		po = new PaddingOracle() {
 			@Override
@@ -48,19 +53,34 @@ class Test {
 
 	@org.junit.jupiter.api.Test
 	public void testPOMany() throws Exception {
+		// reproducible random in multi test
 		Random r = new Random(0);
-		for (int i = 0; i < 1000; i++) {
-			System.out.println("Testing random: " + i);
+		init(r);
+		int errors = 0;
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 100; i++) {
 			int length = 1 + r.nextInt(200);
 			byte[] plaintext = new byte[length];
+			r.nextBytes(plaintext);
 			byte[] c = e.encrypt(plaintext);
 			byte[] p = attack.paddingoracledecrypt(po, c);
 			int pad = p[p.length - 1];
 			int p2length = p.length - pad;
 			byte[] p2 = new byte[p2length];
 			System.arraycopy(p, 0, p2, 0, length);
-			assertArrayEquals(plaintext, p2);
+			// assertArrayEquals(plaintext, p2, "Failure at attempt number: "+i);
+			boolean error = !Arrays.equals(plaintext, p2);
+			if (error) {
+				errors++;
+				sb.append("====").append(i).append("===").append("\n");
+				sb.append("plaintext:  ").append(Arrays.toString(plaintext)).append("\n");
+				sb.append("p2          ").append(Arrays.toString(p2)).append("\n");
+				sb.append("ciphertext: ").append(Arrays.toString(c)).append("\n");
+			}
 		}
+		if (sb.length() > 0)
+			System.err.println(sb);
+		assertEquals(0, errors, "Errors should be none");
 	}
 
 	class Encryptor {
