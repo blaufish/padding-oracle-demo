@@ -2,11 +2,11 @@ package paddingoracle;
 
 public class Attack {
 	final int BLOCKSIZE;
-	
+
 	Attack() {
 		this(8);
 	}
-	
+
 	Attack(int blocksize) {
 		this.BLOCKSIZE = blocksize;
 	}
@@ -28,44 +28,37 @@ public class Attack {
 		return plaintext;
 	}
 
-	byte[] paddingoracledecrypt(PaddingOracle vulnerable, byte[] ciphertexttobecracked, int blockno) throws Exception {
-		byte[] r = new byte[2 * BLOCKSIZE];
-		System.arraycopy(ciphertexttobecracked, BLOCKSIZE * blockno, r, BLOCKSIZE, BLOCKSIZE);
-		byte[] intermediatebytes = new byte[BLOCKSIZE];
-		tryagain: for (int retries = 0; retries < BLOCKSIZE; retries++) {
-			// clear all bytes unless last byte upon try again.
-			if (retries > 0) {
-				intermediatebytes[BLOCKSIZE - 1]++;
-				for (int clear = 0; clear < BLOCKSIZE - 1; clear++)
-					intermediatebytes[clear] = 0;
-			}
-			for (int attacksize = 1; attacksize <= BLOCKSIZE; attacksize++) {
-				copyKnownIntermediateBytes(r, intermediatebytes);
-				final int pkcs5padvalue = attacksize; // pkcs5: pad value is same as pad length
-				pkcs5setLastIvBytesUsingXor(r, attacksize, pkcs5padvalue);
-				final int intermediateByteToAttackIndex = BLOCKSIZE - attacksize;
-				int i = intermediatebytes[intermediateByteToAttackIndex] & 0xFF; // zero unless tryagain
-				//System.out.println("attacksize: " + attacksize + " i: " + i);
-				while (!vulnerable.paddingOracle(r)) {
-					i++;
-					r[intermediateByteToAttackIndex] = (byte) i;
-					if (i == 256) {
-						if (attacksize == 1) {
-							throw new RuntimeException(
-									"All 256 values for byte tested without padding oracle return true");
-						}
-						// We found e.g. 0202 or 030303 when searching for 01. try again!
-						//System.out.println("Try again! attacksize: " + attacksize);
-						continue tryagain;
-					}
-				}
-				final int intermediate = i ^ pkcs5padvalue;
+	byte[] r;
+	byte[] intermediatebytes;
+
+	boolean po(PaddingOracle vulnerable, int attacksize) {
+		copyKnownIntermediateBytes(r, intermediatebytes);
+		pkcs5setLastIvBytesUsingXor(r, attacksize, attacksize);
+		int intermediateByteToAttackIndex = BLOCKSIZE - attacksize;
+		for (int i = 0; i < 256; i++) {
+			r[intermediateByteToAttackIndex] = (byte) i;
+			if (vulnerable.paddingOracle(r)) {
+				final int intermediate = r[intermediateByteToAttackIndex] ^ attacksize;
 				intermediatebytes[intermediateByteToAttackIndex] = (byte) intermediate;
-				//System.out.println("Intermediate: "+ Arrays.toString(intermediatebytes));
+				if (attacksize == BLOCKSIZE)
+					return true;
+				else if (po(vulnerable, attacksize + 1))
+					return true;
+				intermediatebytes[intermediateByteToAttackIndex] = 0;
 			}
-			break tryagain;
 		}
-		return intermediatebytes;
+		return false;
+	}
+
+	byte[] paddingoracledecrypt(PaddingOracle vulnerable, byte[] ciphertexttobecracked, int blockno) throws Exception {
+		r = new byte[2 * BLOCKSIZE];
+		intermediatebytes = new byte[BLOCKSIZE];
+		System.arraycopy(ciphertexttobecracked, BLOCKSIZE * blockno, r, BLOCKSIZE, BLOCKSIZE);
+		if (po(vulnerable, 1)) {
+			return intermediatebytes;
+		} else {
+			throw new RuntimeException("failed");
+		}
 	}
 
 	void copyKnownIntermediateBytes(byte[] r, byte[] intermediatebytes) {

@@ -15,7 +15,7 @@ class Test {
 	Random sr;
 	Encryptor e;
 	Attack attack;
-	
+
 	Encryptor e16;
 	Attack attack16;
 
@@ -28,7 +28,7 @@ class Test {
 		sr = random;
 		e = new Encryptor(8, "Blowfish", "Blowfish/CBC/PKCS5Padding");
 		attack = new Attack();
-		
+
 		e16 = new Encryptor(16, "AES", "AES/CBC/PKCS5Padding");
 		attack16 = new Attack(16);
 	}
@@ -114,7 +114,7 @@ class Test {
 			System.err.println(sb);
 		assertEquals(0, errors, "Errors should be none");
 	}
-		
+
 	class Encryptor implements PaddingOracle {
 		byte[] key;
 		int blockSize;
@@ -139,8 +139,8 @@ class Test {
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
-		}		
-		
+		}
+
 		byte[] decrypt(byte[] ivAndCiphertext) throws Exception {
 			byte[] iv = new byte[blockSize];
 			byte[] c = new byte[ivAndCiphertext.length - iv.length];
