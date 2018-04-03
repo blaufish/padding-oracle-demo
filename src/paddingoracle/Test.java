@@ -83,6 +83,38 @@ class Test {
 		assertEquals(0, errors, "Errors should be none");
 	}
 
+	@org.junit.jupiter.api.Test
+	public void testPOMany16() throws Exception {
+		// reproducible random in multi test
+		Random r = new Random(0);
+		init(r);
+		int errors = 0;
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 100; i++) {
+			int length = 1 + r.nextInt(200);
+			byte[] plaintext = new byte[length];
+			r.nextBytes(plaintext);
+			byte[] c16 = e16.encrypt(plaintext);
+			byte[] p16 = attack16.paddingoracledecrypt(e16, c16);
+			int pad = p16[p16.length - 1];
+			int p2length = p16.length - pad;
+			byte[] p2 = new byte[p2length];
+			System.arraycopy(p16, 0, p2, 0, length);
+			// assertArrayEquals(plaintext, p2, "Failure at attempt number: "+i);
+			boolean error = !Arrays.equals(plaintext, p2);
+			if (error) {
+				errors++;
+				sb.append("====").append(i).append("===").append("\n");
+				sb.append("plaintext16:  ").append(Arrays.toString(plaintext)).append("\n");
+				sb.append("p2            ").append(Arrays.toString(p2)).append("\n");
+				sb.append("ciphertext16: ").append(Arrays.toString(c16)).append("\n");
+			}
+		}
+		if (sb.length() > 0)
+			System.err.println(sb);
+		assertEquals(0, errors, "Errors should be none");
+	}
+		
 	class Encryptor implements PaddingOracle {
 		byte[] key;
 		int blockSize;
