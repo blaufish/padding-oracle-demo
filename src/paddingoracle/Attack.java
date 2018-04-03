@@ -1,7 +1,15 @@
 package paddingoracle;
 
 public class Attack {
-	final static int BLOCKSIZE = 8;
+	final int BLOCKSIZE;
+	
+	Attack() {
+		this(8);
+	}
+	
+	Attack(int blocksize) {
+		this.BLOCKSIZE = blocksize;
+	}
 
 	byte[] paddingoracledecrypt(PaddingOracle vulnerable, byte[] ciphertexttobecracked) throws Exception {
 		int length = ciphertexttobecracked.length;
@@ -53,18 +61,18 @@ public class Attack {
 				}
 				final int intermediate = i ^ pkcs5padvalue;
 				intermediatebytes[intermediateByteToAttackIndex] = (byte) intermediate;
-				// System.out.println("Intermediate: "+ Arrays.toString(intermediatebytes));
+				//System.out.println("Intermediate: "+ Arrays.toString(intermediatebytes));
 			}
 			break tryagain;
 		}
 		return intermediatebytes;
 	}
 
-	static void copyKnownIntermediateBytes(byte[] r, byte[] intermediatebytes) {
+	void copyKnownIntermediateBytes(byte[] r, byte[] intermediatebytes) {
 		System.arraycopy(intermediatebytes, 0, r, 0, BLOCKSIZE);
 	}
 
-	private static void pkcs5setLastIvBytesUsingXor(byte[] r, int attacksize, int pkcs5padvalue) {
+	void pkcs5setLastIvBytesUsingXor(byte[] r, int attacksize, int pkcs5padvalue) {
 		for (int j = BLOCKSIZE - attacksize + 1; j < BLOCKSIZE; j++) {
 			r[j] ^= pkcs5padvalue;
 		}
