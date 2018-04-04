@@ -2,10 +2,10 @@ package paddingoracle;
 
 import java.util.Arrays;
 
-public class Attack {
+public class PaddingOracleAttack {
 	final int BLOCKSIZE;
 
-	public Attack(int blocksize) {
+	public PaddingOracleAttack(int blocksize) {
 		this.BLOCKSIZE = blocksize;
 	}
 

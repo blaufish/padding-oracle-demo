@@ -11,16 +11,16 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-class Test {
+class PaddingOracleAttackTest {
 	Random sr;
 
 	// 8 byte width; Blowfish/CBC/PKCS5Padding
 	Encryptor e8;
-	Attack attack8;
+	PaddingOracleAttack attack8;
 
 	// 16 byte width; AES/CBC/PKCS5Padding
 	Encryptor e16;
-	Attack attack16;
+	PaddingOracleAttack attack16;
 
 	@org.junit.jupiter.api.BeforeEach
 	void setup() throws Exception {
@@ -30,10 +30,10 @@ class Test {
 	private void init(Random random) throws Exception {
 		sr = random;
 		e8 = new Encryptor(8, "Blowfish", "Blowfish/CBC/PKCS5Padding");
-		attack8 = new Attack(8);
+		attack8 = new PaddingOracleAttack(8);
 
 		e16 = new Encryptor(16, "AES", "AES/CBC/PKCS5Padding");
-		attack16 = new Attack(16);
+		attack16 = new PaddingOracleAttack(16);
 	}
 
 	@org.junit.jupiter.api.Test
@@ -80,7 +80,7 @@ class Test {
 		testMany(e16, attack16, 100, r);
 	}
 
-	private void testMany(Encryptor encryptor, Attack poAttack, int iterations, Random r) throws Exception {
+	private void testMany(Encryptor encryptor, PaddingOracleAttack poAttack, int iterations, Random r) throws Exception {
 		int errors = 0;
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < iterations; i++) {
