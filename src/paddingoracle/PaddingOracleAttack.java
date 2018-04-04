@@ -57,7 +57,7 @@ public class PaddingOracleAttack {
 		 * 
 		 */
 		copyKnownIntermediateBytes(r, intermediatebytes);
-		pkcs5setLastIvBytesUsingXor(r, attacksize, attacksize);
+		pkcs5setLastIvBytesUsingXor(r, attacksize);
 		int intermediateByteToAttackIndex = BLOCKSIZE - attacksize;
 		// attack one byte, try all possible values
 		for (int i = 0; i < 256; i++) {
@@ -83,7 +83,8 @@ public class PaddingOracleAttack {
 		System.arraycopy(intermediatebytes, 0, r, 0, BLOCKSIZE);
 	}
 
-	private void pkcs5setLastIvBytesUsingXor(byte[] r, int attacksize, int pkcs5padvalue) {
+	private void pkcs5setLastIvBytesUsingXor(byte[] r, int attacksize) {
+		byte pkcs5padvalue = (byte) attacksize;
 		for (int j = BLOCKSIZE - attacksize + 1; j < BLOCKSIZE; j++) {
 			r[j] ^= pkcs5padvalue;
 		}
