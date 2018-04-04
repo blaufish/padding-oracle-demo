@@ -18,9 +18,9 @@ public class PaddingOracleAttack {
 		int decrypted_ptr = 0;
 		int encrypted_ptr = 0;
 		byte[] r = new byte[2 * BLOCKSIZE];
-		byte[] intermediatebytes = new byte[BLOCKSIZE];
+		byte[] intermediate = new byte[BLOCKSIZE];
 		for (int blockno = 1; blockno < blocks; blockno++) {
-			byte[] intermediate = decryptOneBlock(vulnerable, ciphertexttobecracked, blockno, r, intermediatebytes);
+			decryptOneBlock(vulnerable, ciphertexttobecracked, blockno, r, intermediate);
 			for (int i = 0; i < BLOCKSIZE; i++) {
 				plaintext[decrypted_ptr++] = (byte) ((ciphertexttobecracked[encrypted_ptr++] ^ intermediate[i]));
 			}
@@ -28,20 +28,20 @@ public class PaddingOracleAttack {
 		return plaintext;
 	}
 
-	private byte[] decryptOneBlock(PaddingOracle vulnerable, byte[] ciphertexttobecracked, int blockno, byte[] r,
-			byte[] intermediatebytes) throws Exception {
+	private void decryptOneBlock(PaddingOracle vulnerable, byte[] ciphertexttobecracked, int blockno, byte[] r,
+			byte[] intermediate) throws Exception {
 		Arrays.fill(r, (byte) 0);
-		Arrays.fill(intermediatebytes, (byte) 0);
+		Arrays.fill(intermediate, (byte) 0);
 		System.arraycopy(ciphertexttobecracked, BLOCKSIZE * blockno, r, BLOCKSIZE, BLOCKSIZE);
-		if (recursivePaddingOracleAttack(vulnerable, 1, r, intermediatebytes)) {
-			return intermediatebytes;
+		if (recursivePaddingOracleAttack(vulnerable, 1, r, intermediate)) {
+			return;
 		} else {
 			throw new RuntimeException("failed");
 		}
 	}
 
 	private boolean recursivePaddingOracleAttack(PaddingOracle vulnerable, int attacksize, byte[] r,
-			byte[] intermediatebytes) {
+			byte[] intermediate) {
 		/*
 		 * Set up attack array r using values known. Ex:
 		 * 
@@ -56,7 +56,7 @@ public class PaddingOracleAttack {
 		 * r is intermediate xored with pkcs5pad, and cipher block to crack)
 		 * 
 		 */
-		copyKnownIntermediateBytes(r, intermediatebytes);
+		copyKnownIntermediateBytesToR(r, intermediate);
 		pkcs5setLastIvBytesUsingXor(r, attacksize);
 		int intermediateByteToAttackIndex = BLOCKSIZE - attacksize;
 		// attack one byte, try all possible values
@@ -64,23 +64,23 @@ public class PaddingOracleAttack {
 			r[intermediateByteToAttackIndex] = (byte) i;
 			if (vulnerable.paddingOracle(r)) {
 				// Bingo! r is a valid ciphertext
-				final int intermediate = r[intermediateByteToAttackIndex] ^ attacksize;
-				intermediatebytes[intermediateByteToAttackIndex] = (byte) intermediate;
+				int intermediateByte = r[intermediateByteToAttackIndex] ^ attacksize;
+				intermediate[intermediateByteToAttackIndex] = (byte) intermediateByte;
 				if (attacksize == BLOCKSIZE)
 					return true; // success
-				else if (recursivePaddingOracleAttack(vulnerable, attacksize + 1, r, intermediatebytes))
+				else if (recursivePaddingOracleAttack(vulnerable, attacksize + 1, r, intermediate))
 					return true; // recursive success
-				
+
 				// r wasn't the hero we were searching for after all. for example, we may have
 				// stumbled upon 02 02 when we thought we had found 01.
-				intermediatebytes[intermediateByteToAttackIndex] = 0; // cleanup bad finding
+				intermediate[intermediateByteToAttackIndex] = 0; // cleanup bad finding
 			}
 		}
 		return false;
 	}
 
-	private void copyKnownIntermediateBytes(byte[] r, byte[] intermediatebytes) {
-		System.arraycopy(intermediatebytes, 0, r, 0, BLOCKSIZE);
+	private void copyKnownIntermediateBytesToR(byte[] r, byte[] intermediate) {
+		System.arraycopy(intermediate, 0, r, 0, BLOCKSIZE);
 	}
 
 	private void pkcs5setLastIvBytesUsingXor(byte[] r, int attacksize) {
